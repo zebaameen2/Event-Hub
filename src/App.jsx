@@ -1,5 +1,5 @@
 
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header.jsx";
 import CreateEventPage from "./pages/CreateEventPage";
 import EventDetails from "./pages/EventDetails";
@@ -43,19 +43,27 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* registration thank‑you page must come before the dynamic eventId route to
+              avoid accidental matching by :eventId.  Renamed from "/events/successreg"
+              to a less collision‑prone URL. */}
+          <Route
+            path="/events/registration-success"
+            element={
+              <ProtectedRoute>
+                <><Header /><SuccessReg /></>
+              </ProtectedRoute>
+            }
+          />
+          {/* keep old path around with a redirect just in case someone has bookmarks */}
+          <Route
+            path="/events/successreg"
+            element={<Navigate to="/events/registration-success" replace />}
+          />
           <Route
             path="/events/:eventId"
             element={
               <ProtectedRoute>
                 <><Header /><EventDetails /></>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/events/successreg"
-            element={
-              <ProtectedRoute>
-                <><Header /><SuccessReg /></>
               </ProtectedRoute>
             }
           />

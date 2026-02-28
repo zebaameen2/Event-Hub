@@ -40,19 +40,20 @@ return (
     <Header eventId={eventId} handleSignOut={handleSignOut} />
     <ThreeBackground />
 
-    <div className="ml-64 min-h-screen bg-gradient-to-br from-pink-50/60 to-white backdrop-blur-sm">
+    {/* Fixed top-right profile button - stays visible and doesn't affect layout flow */}
+    <div className="fixed top-4 right-4 z-40">
+      <button
+        onClick={() => navigate("/profile")}
+        className="bg-pink-600 text-white px-4 py-2 rounded-full shadow-md hover:scale-105 transition"
+        aria-label="My Profile"
+      >
+        My Profile
+      </button>
+    </div>
 
-      {/* Top Bar */}
-      <div className="flex justify-end items-center bg-white/80 backdrop-blur-md shadow-sm py-4 px-6 sticky top-0 z-10">
-        <button
-          onClick={() => navigate("/profile")}
-          className="bg-pink-600 text-white px-5 py-2 rounded-full shadow-md hover:scale-105 transition"
-        >
-          My Profile
-        </button>
-      </div>
+    <div className="md:ml-64 ml-0 min-h-screen bg-gradient-to-br from-pink-50/60 to-white backdrop-blur-sm">
 
-      <section className="container px-6 py-16 mx-auto">
+      <section className="container px-4 md:px-6 py-12 md:py-16 mx-auto">
 
         {/* Heading */}
         <div className="text-center mb-16">
@@ -66,7 +67,7 @@ return (
         </div>
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
           {[
             { value: "2.7K", label: "Downloads" },
             { value: users.length, label: "Users" },
@@ -86,7 +87,7 @@ return (
         </div>
 
         {/* Users Section */}
-        <div className="bg-white/80 backdrop-blur-md p-8 rounded-2xl shadow-lg">
+        <div className="bg-white/80 backdrop-blur-md p-6 md:p-8 rounded-2xl shadow-lg">
           <h2 className="text-2xl font-semibold mb-6 text-gray-800">
             Registered Users
           </h2>
@@ -113,7 +114,7 @@ return (
         </div>
 
         {/* CTA */}
-        <div className="flex justify-center mt-20">
+        <div className="flex justify-center mt-12 md:mt-20">
           <button
             onClick={() => navigate("/create")}
             className="bg-gradient-to-r from-pink-600 to-rose-500 text-white px-10 py-4 rounded-full shadow-xl text-lg font-medium hover:scale-110 transition duration-300"

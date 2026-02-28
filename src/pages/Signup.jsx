@@ -246,10 +246,20 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center"
-         style={{ background: "linear-gradient(135deg, #667eea, #764ba2)" }}>
-      <div className="relative z-10 w-full max-w-2xl px-6">
-        <div className="card backdrop-blur-xl border border-secondary-500/30 shadow-2xl p-8">
+    <div className="md:ml-64 ml-0">
+      <div className="fixed top-4 right-4 z-40 hidden md:block">
+        <button
+          onClick={() => window.location.assign('/profile')}
+          className="bg-pink-600 text-white px-4 py-2 rounded-full shadow-md hover:scale-105 transition"
+        >
+          My Profile
+        </button>
+      </div>
+
+      <div className="min-h-screen flex items-center justify-center"
+           style={{ background: "linear-gradient(135deg, #667eea, #764ba2)" }}>
+        <div className="relative z-10 w-full max-w-2xl px-6">
+          <div className="card backdrop-blur-xl border border-secondary-500/30 shadow-2xl p-6 md:p-8">
           <h1 className="text-4xl font-bold text-white mb-6">
             Create Account
           </h1>
@@ -317,6 +327,7 @@ const SignUp = () => {
         </div>
       </div>
     </div>
+  </div>
   );
 };
 

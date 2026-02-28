@@ -248,6 +248,31 @@ const router = express.Router();
 const supabase = require("../supabaseClient");
 const authMiddleware = require("../middleware/authMiddleware");
 
+// track whether our registrations table has a `confirm` column; we'll lazily
+// check the schema on first use and cache the result so we can survive a
+// database that hasn't been migrated yet.
+let hasConfirmColumn = null;
+async function ensureConfirmColumn() {
+  if (hasConfirmColumn !== null) return hasConfirmColumn;
+  try {
+    const { error } = await supabase
+      .from("registrations")
+      .select("confirm")
+      .limit(1);
+    if (error) {
+      // most likely message will mention 'confirm' missing
+      console.warn("confirm column check error", error.message);
+      hasConfirmColumn = false;
+    } else {
+      hasConfirmColumn = true;
+    }
+  } catch (err) {
+    console.warn("confirm column detection failed", err.message);
+    hasConfirmColumn = false;
+  }
+  return hasConfirmColumn;
+}
+
 // Multer memory storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -463,16 +488,42 @@ router.get("/my", authMiddleware, async (req, res) => {
 
 
 // registrations route
-router.get("/api/events/:id/registrations", async (req, res) => {
+router.get("/:id/registrations", async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Check schema once and build select string accordingly to avoid noisy retries
+    const hasConfirm = await ensureConfirmColumn();
+    const selectStr = hasConfirm
+      ? "id, confirm, user_id, users(firstname,lastname,email)"
+      : "id, user_id, users(firstname,lastname,email)";
+
     const { data, error } = await supabase
       .from("registrations")
-      .select("id, confirm, users(name, email)") // join users table
+      .select(selectStr)
       .eq("event_id", id);
 
-    if (error) return res.status(500).json({ success: false, error: error.message });
+    if (error) {
+      // If we unexpectedly hit a schema error, try a minimal fallback once
+      if (error.message?.includes("confirm")) {
+        console.log("⚠️  confirm column doesn't exist (unexpected), retrying without it");
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from("registrations")
+          .select("id, user_id, users(firstname,lastname,email)")
+          .eq("event_id", id);
+        if (fallbackError) return res.status(500).json({ success: false, error: fallbackError.message });
+        return res.json({ success: true, registrations: fallbackData, event: null });
+      }
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    // debug: log what we selected so we can see why client shows empty table
+    try {
+      console.log("REGISTRATIONS FETCH", { eventId: id, select: selectStr, count: Array.isArray(data) ? data.length : 0 });
+      if (Array.isArray(data) && data.length) console.log("REGISTRATIONS DATA SAMPLE", data.slice(0, 5));
+    } catch (logErr) {
+      console.warn("Failed to log registrations data", logErr);
+    }
 
     const { data: eventData } = await supabase
       .from("events")
@@ -490,6 +541,95 @@ router.get("/api/events/:id/registrations", async (req, res) => {
 
 
 /* =====================================================
+   ✅ REGISTER USER FOR EVENT (PUBLIC)
+===================================================== */
+router.post("/:id/register", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    console.log("REGISTER route hit", { eventId: id, userId });
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+
+    // ensure the event actually exists before touching registrations
+    const { data: eventRecord, error: eventErr } = await supabase
+      .from("events")
+      .select("id")
+      .eq("id", id)
+      .maybeSingle();
+    if (eventErr) throw eventErr;
+    if (!eventRecord) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // optionally verify user exists (helpful if token stale)
+    const { data: userRecord, error: userErr } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (userErr) throw userErr;
+    if (!userRecord) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if user already registered
+    const { data: existingReg, error: checkError } = await supabase
+      .from("registrations")
+      .select("*")
+      .eq("event_id", id)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (checkError) throw checkError;
+
+    if (existingReg) {
+      return res.status(400).json({ error: "You are already registered for this event" });
+    }
+
+    // Insert registration (only include confirm column if it exists)
+    const insertObj = { event_id: id, user_id: userId };
+    if (await ensureConfirmColumn()) {
+      insertObj.confirm = "pending";
+    }
+
+    const { data, error } = await supabase
+      .from("registrations")
+      .insert([insertObj])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, registration: data });
+  } catch (err) {
+    console.error("REGISTRATION ERROR:", err);
+    // if Supabase gives a human message include it in response
+    const msg = err?.message || err?.error_description || "Registration failed";
+    // if it's the schema cache error remove confirm and retry one more time
+    if (msg.includes("could not find the 'confirm'")) {
+      try {
+        const { data, error } = await supabase
+          .from("registrations")
+          .insert([{ event_id: id, user_id: userId }])
+          .select()
+          .single();
+        if (!error) {
+          return res.json({ success: true, registration: data });
+        }
+      } catch (_) {}
+    }
+    res.status(500).json({
+      success: false,
+      message: msg,
+    });
+  }
+});
+
+/* =====================================================
    ✅ GET SINGLE EVENT (PUBLIC)
 ===================================================== */
 router.get("/:id", async (req, res) => {
@@ -504,8 +644,14 @@ router.get("/:id", async (req, res) => {
 
     if (error) throw error;
 
+    if (!data) {
+      // no such event – send 404 so front‑end can react accordingly
+      return res.status(404).json({ success: false, message: "Event not found" });
+    }
+
     res.json({ success: true, event: data });
   } catch (err) {
+    console.error("GET EVENT ERROR:", err);
     res.status(500).json({
       success: false,
       message: err.message,

@@ -177,10 +177,9 @@ export default function MyEvents() {
   return (
     <>
       <Dashboard />
-      <div className="flex h-full   justify-center w-full">
+      <div className="md:ml-64 ml-0 pt-16 flex h-full justify-center w-full">
 
-
-        <div className="w-full max-w-6xl px-6">
+        <div className="w-full max-w-6xl px-4 md:px-6">
           <h1 className="text-3xl font-bold text-center py-8">
             My Active Events
           </h1>

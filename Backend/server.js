@@ -21,6 +21,7 @@ const authMiddleware = require("./middleware/authMiddleware");
 
 const userRoutes = require("./routes/users");
 const eventRoutes = require("./routes/events");
+const registrationsRoutes = require("./routes/registrations");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,9 +34,29 @@ app.use(cors({
 
 app.use(express.json());
 
+// ===== Root Route =====
+app.get("/", (req, res) => {
+  res.json({ message: "Supabase backend running at http://localhost:5000" });
+});
+
 // ===== Routes =====
 app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/registrations", registrationsRoutes);
+
+// Dev/local email endpoint to avoid relying on external service during development.
+// Accepts { email, subject, message } and logs the payload. Returns 200.
+app.post("/api/send-email", (req, res) => {
+  try {
+    const { email, subject, message } = req.body || {};
+    console.log("DEV EMAIL REQUEST", { email, subject, message });
+    // In production replace with actual email send using SendGrid/SMTP and proper API key.
+    return res.json({ success: true, message: "Email logged (dev)" });
+  } catch (err) {
+    console.error("DEV EMAIL ERROR", err);
+    return res.status(500).json({ success: false, message: "Email failed (dev)" });
+  }
+});
 
 
 // ================= SIGNUP =================
@@ -247,41 +268,44 @@ app.get("/api/events/:id", async (req, res) => {
 //   }
 // });
 
-app.post("/api/events/:id/register", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { userId, name, email } = req.body; // 👈 frontend se name + email bhi bhejna hoga
-
-    if (!userId) {
-      return res.status(401).json({ error: "User not logged in" });
-    }
-
-    const { error } = await supabase
-      .from("registrations")
-      .insert([
-        {
-          event_id: id,
-          user_id: userId,
-          name,       // 👈 save attendee name
-          email,      // 👈 save attendee email
-          confirm: "pending", // default status
-        },
-      ]);
-
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-
-    res.json({
-      success: true,
-      message: "Registered successfully",
-    });
-
-  } catch (err) {
-    console.error("Register error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
+// duplicate registration route left in server.js for historical reasons; the
+// real implementation now lives under Backend/routes/events.js.  Keeping this
+// commented out avoids accidental conflicts.
+// app.post("/api/events/:id/register", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { userId, name, email } = req.body; // 👈 frontend se name + email bhi bhejna hoga
+//
+//     if (!userId) {
+//       return res.status(401).json({ error: "User not logged in" });
+//     }
+//
+//     const { error } = await supabase
+//       .from("registrations")
+//       .insert([
+//         {
+//           event_id: id,
+//           user_id: userId,
+//           name,       // 👈 save attendee name
+//           email,      // 👈 save attendee email
+//           confirm: "pending", // default status
+//         },
+//       ]);
+//
+//     if (error) {
+//       return res.status(500).json({ error: error.message });
+//     }
+//
+//     res.json({
+//       success: true,
+//       message: "Registered successfully",
+//     });
+//
+//   } catch (err) {
+//     console.error("Register error:", err);
+//     res.status(500).json({ error: "Server error" });
+//   }
+//});
 
 
 

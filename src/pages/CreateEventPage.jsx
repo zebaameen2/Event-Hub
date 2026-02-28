@@ -171,8 +171,17 @@ const CreateEventPage = () => {
 
 
   return (
-    <> <Dashboard />
-      <div className="ml-64 pt-20 p-10 bg-gray-50 min-h-screen">
+    <>
+      <Dashboard />
+      <div className="fixed top-4 right-4 z-40 hidden md:block">
+        <button
+          onClick={() => navigate("/profile")}
+          className="bg-pink-600 text-white px-4 py-2 rounded-full shadow-md hover:scale-105 transition"
+        >
+          My Profile
+        </button>
+      </div>
+      <div className="md:ml-64 ml-0 pt-20 p-6 md:p-10 bg-gray-50 min-h-screen">
         <h1 className="text-3xl font-bold mb-6">Create Event</h1>
         <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
           {/* Event Fields */}

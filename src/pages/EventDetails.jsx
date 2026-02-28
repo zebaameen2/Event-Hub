@@ -20,6 +20,14 @@ export default function EventDetails() {
 
   const { eventId } = useParams(); // ✅ eventId from URL
   const [event, setEvent] = useState(null);
+
+  // guard against accidentally matching the `successreg` path as an id
+  useEffect(() => {
+    if (eventId === "successreg" || eventId === "registration-success" || !eventId) {
+      // if we somehow end up on a non-event slug, bounce back to list
+      navigate("/events", { replace: true });
+    }
+  }, [eventId, navigate]);
   const [loader, setLoader] = useState(true);
   const [isReg, setIsReg] = useState(false);
 
@@ -27,13 +35,23 @@ export default function EventDetails() {
     const fetchEvent = async () => {
       setLoader(true);
       try {
+        console.log("fetching event", eventId);
         const res = await fetch(`http://localhost:5000/api/events/${eventId}`);
         const data = await res.json();
 
         if (res.ok) {
-          setEvent(data.event);
+          if (data.event) {
+            setEvent(data.event);
+            // Check if user is already registered
+            checkRegistration(data.event.id);
+          } else {
+            // no event returned – navigate back so user doesn't see empty page
+            navigate("/events", { replace: true });
+          }
         } else {
-          console.error("Error:", data.error);
+          console.error("Error fetching event:", data.error || data.message);
+          // if the server said 404 or something else, bounce back to list
+          navigate("/events", { replace: true });
         }
       } catch (err) {
         console.error("Server error:", err);
@@ -45,12 +63,37 @@ export default function EventDetails() {
     fetchEvent();
   }, [eventId]);
 
+  // Check if user is registered for this event
+  const checkRegistration = async (eventId) => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+      if (!userInfo?.id) return;
+
+      const res = await fetch(`http://localhost:5000/api/events/${eventId}/registrations`);
+      const data = await res.json();
+
+      if (res.ok && data.registrations) {
+        const isUserRegistered = data.registrations.some(
+          (reg) => reg.user_id === userInfo.id
+        );
+        setIsReg(isUserRegistered);
+      }
+    } catch (err) {
+      console.error("Error checking registration:", err);
+    }
+  };
+
   //  ----------Handle REgister------------------
   const handleRegister = async () => {
     const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
 
     if (!userInfo?.id) {
       alert("User not logged in");
+      return;
+    }
+
+    if (isReg) {
+      alert("You are already registered for this event");
       return;
     }
 
@@ -64,14 +107,16 @@ export default function EventDetails() {
       const data = await res.json();
 
       if (res.ok) {
-        // ✅ Redirect to SuccessReg page
-        navigate("/events/successreg");
+        setIsReg(true);
+        // ✅ Redirect to registration success page (renamed)
+        navigate("/events/registration-success");
       } else {
-        alert(data.error || "Registration failed");
+        console.error("Registration response error:", data);
+        alert(data.error || data.message || "Registration failed");
       }
     } catch (err) {
       console.error("Server error:", err);
-      alert("Server error");
+      alert("Server error: " + err.message);
     }
   };
 
@@ -100,8 +145,16 @@ export default function EventDetails() {
 
   return (
     <>
-      
-      <div className="ml-64 pt-20 min-h-screen bg-gray-50 p-6">
+      <Header eventId={eventId} />
+      <div className="fixed top-4 right-4 z-40 hidden md:block">
+        <button
+          onClick={() => navigate("/profile")}
+          className="bg-pink-600 text-white px-4 py-2 rounded-full shadow-md hover:scale-105 transition"
+        >
+          My Profile
+        </button>
+      </div>
+      <div className="md:ml-64 ml-0 pt-20 min-h-screen bg-gray-50 p-4 md:p-6">
         <div className="bg-white max-w-3xl mx-auto rounded-xl p-6 mb-6 shadow">
           <h1 className="text-3xl font-bold">{event.eventname}</h1>
 

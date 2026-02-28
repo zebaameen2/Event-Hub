@@ -43,18 +43,25 @@ export default function Dashboard() {
       <Header eventId={eventId} handleSignOut={handleSignOut} />
       <ThreeBackground />
 
-      <div className="ml-64  bg-gradient-to-br from-pink-50/60 to-white backdrop-blur-sm">
+      {/* Fixed top-right profile button and responsive content offset */}
+      <div className="fixed top-4 right-4 z-40 md:hidden">
+        <button
+          onClick={() => navigate("/profile")}
+          className="bg-pink-600 text-white px-3 py-1.5 rounded-full shadow-md hover:scale-105 transition text-sm"
+        >
+          My Profile
+        </button>
+      </div>
 
-        {/* Top Bar */}
-        <div className="flex justify-end items-center bg-white/80 backdrop-blur-md shadow-sm py-4 px-6 sticky top-0 z-10">
+      <div className="md:ml-64 ml-0 bg-gradient-to-br from-pink-50/60 to-white backdrop-blur-sm">
+        <div className="fixed top-4 right-4 z-40 hidden md:block">
           <button
             onClick={() => navigate("/profile")}
-            className="bg-pink-600 text-white px-5 py-2 rounded-full shadow-md hover:scale-105 transition"
+            className="bg-pink-600 text-white px-4 py-2 rounded-full shadow-md hover:scale-105 transition"
           >
             My Profile
           </button>
         </div>
-
 
       </div>
     </>

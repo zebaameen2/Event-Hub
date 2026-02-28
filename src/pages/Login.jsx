@@ -36,52 +36,7 @@ const Login = () => {
 
     console.log("Form submitted");
 
-    //   try {
-    //     const res = await fetch("http://localhost:5000/api/login",
-
-    //       {
-    //         method: "POST",
-    //         headers: { "Content-Type": "application/json" },
-    //         body: JSON.stringify({
-    //           email: formData.email,
-    //           password: formData.password,
-    //         }),
-    //       });
-
-    //     const data = await res.json();
-
-
-    //     console.log("FULL LOGIN RESPONSE:", data);
-
-    //     if (!res.ok) {
-    //       setError(data.error || "Login failed");
-
-
-
-    //     }
-    //     // else {
-    //     //     // ✅ FIXED HERE
-    //     //     localStorage.setItem("user", JSON.stringify(data.user));
-    //     //     navigate("/dashboard");
-    //     //   }
-
-    //     else {
-    //       localStorage.setItem("userInfo", JSON.stringify({
-    //         id: data.userId,
-    //         email: data.email
-    //       }));
-    //       navigate("/dashboard");
-    //     }
-
-
-
-    //   } catch (err) {
-    //     setError("Server error");
-    //   } finally {
-    //     setIsLoading(false);
-    //   }
-    // };
-
+    
     try {
       const res = await fetch("http://localhost:5000/api/login", {
         method: "POST",
@@ -123,15 +78,26 @@ const Login = () => {
       setIsLoading(false);
     }
   }
+ 
 
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ background: "linear-gradient(135deg, #667eea, #764ba2)" }}
-    >
-      <div className="relative z-10 w-full max-w-md px-6">
-        <div className="card backdrop-blur-xl border border-primary-500/30 shadow-2xl p-8">
+    <div className="md:ml-64 ml-0">
+      <div className="fixed top-4 right-4 z-40 hidden md:block">
+        <button
+          onClick={() => window.location.assign('/profile')}
+          className="bg-pink-600 text-white px-4 py-2 rounded-full shadow-md hover:scale-105 transition"
+        >
+          My Profile
+        </button>
+      </div>
+
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "linear-gradient(135deg, #667eea, #764ba2)" }}
+      >
+        <div className="relative z-10 w-full max-w-md px-6">
+          <div className="card backdrop-blur-xl border border-primary-500/30 shadow-2xl p-6">
           <h1 className="text-4xl font-bold text-white mb-4">
             Welcome Back
           </h1>
@@ -180,6 +146,7 @@ const Login = () => {
         </div>
       </div>
     </div>
+  </div>
   );
 };
 

@@ -94,10 +94,9 @@ export default function EventsList() {
     <>
       <Dashboard />
       {/* RIGHT PANEL */}
-      <div className="ml-64  min-h-screen bg-gray-50">
-        
+      <div className="md:ml-64 ml-0 min-h-screen bg-gray-50 pt-16">
         <div className="flex justify-center w-full">
-          <div className="w-full max-w-6xl px-6 py-8">
+          <div className="w-full max-w-6xl px-4 md:px-6 py-8">
             <h1 className="text-3xl font-bold mb-8 text-gray-800">
               All Active Events
             </h1>

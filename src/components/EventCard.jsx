@@ -6,7 +6,13 @@ export default function EventCard({ event }) {
   return (
     <div
       className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer"
-      onClick={() => navigate(`/events/${event.id}`)}
+      onClick={() => {
+        if (!event || !event.id) {
+          console.warn("EventCard clicked but event.id is missing", event);
+          return;
+        }
+        navigate(`/events/${event.id}`);
+      }}
     >
       {/* Image */}
       {event.banner_url || event.card_url ? (
@@ -33,6 +39,10 @@ export default function EventCard({ event }) {
         <button
           onClick={(e) => {
             e.stopPropagation(); // prevent card click conflict
+            if (!event || !event.id) {
+              console.warn("View Details clicked but event.id missing", event);
+              return;
+            }
             navigate(`/events/${event.id}`);
           }}
           className="mt-4 w-full bg-pink-600 text-white py-2 rounded-lg font-semibold hover:bg-pink-700 transition-colors duration-200"
